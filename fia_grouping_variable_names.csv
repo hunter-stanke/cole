@@ -1,0 +1,24 @@
+code,name,treeLevel
+RDDISTCD,Distance to improved road,F
+ECOSUBCD,Ecological subsection,F
+CONGCD,Congressional district,F
+STATECD,State,F
+UNITCD,Survey Unit,F
+COUNTYCD,County,F
+RESERVCD,Reserved status,F
+OWNCD,Ownership,F
+OWNGRPCD,Ownership group,F
+FORTYPCD,Forest type,F
+STDSZCD,Stand size class,F
+SITECLCD,Site productivity class,F
+STDORGCD,Stand origin,F
+PHYSCLCD,Physiographic class,F
+GSSTKCD,Stocking class (growing-stock),F
+ALSTKCD,Stocking class (all live),F
+DSTBRCD1,Disturbance type,F
+TRTCD1,Treatment type,F
+STATUSCD,Tree status,T
+SPCD,Tree species,T
+SPGRPCD,Tree species group,T
+CCLCD,Crown position,T
+AGENTCD,Cause of death,T

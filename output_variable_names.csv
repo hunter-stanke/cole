@@ -1,0 +1,32 @@
+rfia_name,cole_name
+year,Year
+pool,Forest carbon pool
+carb_acre,Forest carbon (tonnes / acre)
+carb_total,Total forest carbon (tonnes)
+area_total,Total forest area (acres)
+carb_acre_se,"Forest carbon (relative standard error, %)"
+carb_total_se,"Total forest carbon (relative standard error, %)"
+area_total_se,"Total forest area (relative standard error, %)"
+nplots_area,Number of non-zero plots
+perc_area,Fraction of forested area (%)
+perc_area_se,"Fraction of forested area (relative standard error, %)"
+bio_acre,Tree biomass (short tons / acre)
+bio_total,Total tree biomass (short tons)
+bio_acre_se,"Tree biomass (relative standard error, %)"
+bio_total_se,"Total tree biomass (relative standard error, %)"
+tpa,Trees per acre
+baa,Basal area (sq.ft. / acre)
+tree_total,Total number of trees
+ba_total,Total basal area (sq.ft.)
+tpa_se,"Trees per acre (relative standard error, %)"
+baa_se,"Basal area (relative standard error, %)"
+tree_total_se,"Total number of trees (relative standard error, %)"
+ba_total_se,"Total basal area (relative standard error, %)"
+bole_cf_acre,Merchantable volume (cu.ft. / acre)
+saw_mbf_acre,Sawtimber volume (MBF / acre)
+bole_cf_total,Total merchantable volume (cu.ft. / acre)
+saw_mbf_total,Total sawtimber volume (MBF / acre)
+bole_cf_acre_se,"Merchantable volume (relative standard error, %)"
+saw_mbf_acre_se,"Sawtimber volume (relative standard error, %)"
+bole_cf_total_se,"Total merchantable volume (relative standard error, %)"
+saw_mbf_total_se,"Total sawtimber volume (relative standard error, %)"

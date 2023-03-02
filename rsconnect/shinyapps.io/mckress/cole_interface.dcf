@@ -1,0 +1,14 @@
+name: cole_interface
+title: cole_interface
+username:
+account: mckress
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5654551
+bundleId: 5579437
+url: https://mckress.shinyapps.io/cole_interface/
+when: 1644888390.88906
+lastSyncTime: 1644888390.88907
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: .RData|areaDomainBox.R|template.html|test.R
