@@ -83,8 +83,7 @@ ui <- dashboardPage(
           is a web-based calculator that helps users estimate and monitor forest carbon stocks across 
           large geographic regions of interest (i.e., 75,000 acres and larger). 
           The tool is designed to provide a simple and accessible way for landowners, foresters, and
-          other stakeholders to assess the carbon impact of different management 
-          strategies and make informed decisions about forest management."),
+          other stakeholders to make informed decisions about forest management."),
         p("In addition to forest carbon estimates, the tool also provides 
           estimates of tree density, forested area, merchantable volume, and tree 
           biomass. These additional features enable users to better understand 
