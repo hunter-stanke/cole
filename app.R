@@ -34,6 +34,7 @@ output.variables.df = read.csv("output_variable_names.csv") %>%
   dplyr::bind_rows(data.frame(rfia_name = grouping.variables.df$code,
                               cole_name = grouping.variables.df$name)) %>%
   dplyr::mutate_all(tolower)
+grp.names <- read.csv("grouping_attr_names.csv")
 
 
 ## Lists to hold drawn shapefiles
@@ -335,9 +336,9 @@ ui <- dashboardPage(
               message = "
               (1) Forest carbon: tonnes C by IPCC forest carbon pools (includes soils & forest litter); 
               (2) Forest area: acres of forest/ timberland;
-              (3) Tree biomass: short tons dry biomass by tree component;
+              (3) Tree biomass: short tons dry aboveground biomass (includes stump, bole, tops & limbs, and foliage);
               (4) Tree density: trees per acre and tree basal area;
-              (5) Merchantable volume: cubic feet and board feet of merchantable wood",
+              (5) Merchantable volume: net cubic feet and board feet of merchantable wood",
               permanent = FALSE,
               rounded = TRUE, 
               animate = FALSE
@@ -397,6 +398,8 @@ ui <- dashboardPage(
                                                 ),
                                                 selected = 'live')
             ),
+            
+            
             
             
             br(),
@@ -1064,6 +1067,17 @@ server <- shinyServer(function(input, output, session) {
   ## When someone clicks get results, hand inputs to rFIA
   observeEvent(input$get_results, {
     
+    ## Check for state specific groups
+    if (!is.null(input$groupBy)) {
+      grp.test <- any(c('COUNTYCD', 'UNITCD', 'CONGCD') %in% input$groupBy)
+      if (grp.test) {
+        new.grps <- unique(c('STATECD', input$groupBy))
+      } else {
+        new.grps <- input$groupBy
+      }
+    } else {
+      new.grps <- input$groupBy
+    }
     
     ## Load spatial data/ get overlapping states
     aoi.prep <- prep_aoi(spatial_domain = input$spatial_domain,
@@ -1103,7 +1117,7 @@ server <- shinyServer(function(input, output, session) {
                            polys = aoi,
                            byPool = as.logical(input$byPool),
                            landType = input$landType,
-                           grpBy = eval(input$groupBy),
+                           grpBy = eval(new.grps),
                            #areaDomain = eval(parse(text = input$areaDomain)),
                            method = input$method,
                            lambda = input$lambda,
@@ -1114,7 +1128,7 @@ server <- shinyServer(function(input, output, session) {
         df <- rFIA::area(db = db, 
                          polys = aoi,
                          landType = input$landType,
-                         grpBy = eval(input$groupBy),
+                         grpBy = eval(new.grps),
                          #areaDomain = eval(parse(text = input$areaDomain)),
                          method = input$method,
                          lambda = input$lambda,
@@ -1124,7 +1138,7 @@ server <- shinyServer(function(input, output, session) {
         df <- rFIA::tpa(db = db, 
                         polys = aoi,
                         landType = input$landType,
-                        grpBy = eval(input$groupBy),
+                        grpBy = eval(new.grps),
                         treeType = input$treeType,
                         #areaDomain = eval(parse(text = input$areaDomain)),
                         #treeDomain = eval(parse(text = input$treeDomain)),
@@ -1136,7 +1150,7 @@ server <- shinyServer(function(input, output, session) {
         df <- rFIA::volume(db = db, 
                            polys = aoi,
                            landType = input$landType,
-                           grpBy = eval(input$groupBy),
+                           grpBy = eval(new.grps),
                            treeType = input$treeType,
                            #areaDomain = eval(parse(text = input$areaDomain)),
                            #treeDomain = eval(parse(text = input$treeDomain)),
@@ -1149,7 +1163,7 @@ server <- shinyServer(function(input, output, session) {
         df <- rFIA::biomass(db = db, 
                             polys = aoi,
                             landType = input$landType,
-                            grpBy = eval(input$groupBy),
+                            grpBy = eval(new.grps),
                             treeType = input$treeType,
                             #areaDomain = eval(parse(text = input$areaDomain)),
                             #treeDomain = eval(parse(text = input$treeDomain)),
@@ -1174,6 +1188,35 @@ server <- shinyServer(function(input, output, session) {
         dplyr::mutate(dplyr::across(dplyr::ends_with('TOTAL'), round, 0)) %>%
         dplyr::select(-dplyr::any_of(c('N', 'nPlots_TREE')))
       
+      ## Recode attribute names
+      chosen.grps <- names(df)[names(df) %in% unique(grp.names$code)]
+      if (length(chosen.grps) > 0) {
+        for (grp in chosen.grps) {
+          ## Depends on state being evaluated first
+          if (grp %in% c('UNITCD', 'COUNTYCD', 'CONGCD')) {
+            chosen.grp.names <- dplyr::filter(grp.names, code %in% grp) %>%
+              dplyr::mutate(STATECD = stringr::str_split(name, ' - ', simplify = TRUE)[,1])
+            names(chosen.grp.names)[names(chosen.grp.names) == 'value'] <- grp
+            df <- df %>%
+              dplyr::left_join(chosen.grp.names, 
+                               by = c('STATECD', grp)) %>%
+              dplyr::select(-dplyr::any_of(c(grp, 'value', 'code')))
+            names(df)[names(df) == 'name'] <- grp
+          } else {
+            chosen.grp.names <- dplyr::filter(grp.names, code %in% grp) 
+            names(chosen.grp.names)[names(chosen.grp.names) == 'value'] <- grp
+            df <- df %>%
+              dplyr::left_join(chosen.grp.names, 
+                               by = grp) %>%
+              dplyr::select(-dplyr::any_of(c(grp, 'value', 'code')))
+            names(df)[names(df) == 'name'] <- grp
+          }
+          
+        }
+        df <- dplyr::select(df, YEAR, dplyr::any_of(chosen.grps), dplyr::everything())
+      }
+      
+      ## Replace column names w/ something more readable
       df.names <- data.frame(rfia_name = tolower(names(df))) %>%
         dplyr::left_join(output.variables.df, by = 'rfia_name') %>%
         # Protect names of user uploaded files
