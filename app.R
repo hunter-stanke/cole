@@ -17,6 +17,8 @@ library(leaflet.extras)
 library(rgeos)
 library(purrr)
 library(stringr)
+library(prompter)
+library(stringr)
 # library(shinyFiles)
 
 
@@ -63,27 +65,68 @@ max_year = as.character(lubridate::year(lubridate::today()))
 msu_green = "#18453B"
 
 ui <- dashboardPage(
-  dashboardHeader(title = "COLE", color = "grey", inverted = TRUE), # Can put logo here
+  dashboardHeader(title = "COLE 2.0", color = "grey", inverted = TRUE), # Can put logo here
   dashboardSidebar(side = "left", size = "thin", color = "grey", inverted = TRUE,
                    sidebarMenu(
                      menuItem(tabName = 'about', 'About'),
-                     menuItem(tabName = 'userGuide', "User's Guide"),
                      menuItem(tabName = "tab1", "Define Region of Interest"),
                      menuItem(tabName = "tab2", "Define Quantities of Interest"))),
   dashboardBody(tabItems(
     tabItem(
       tabName = 'about',
       semanticPage(
-        p('More soon. Intention is to have a brief description of COLE, 
-          past and present. Just a landing page, maybe unnecessary.'),
-      )
-    ),
-    tabItem(
-      tabName = 'userGuide',
-      semanticPage(
-        p('More soon. Intention is to go into more detail here. Not yet sure how to 
-          integrate documentation into the definition/ results pages, so should try to cover it here. ')
+        #title = "Carbon Online Estimator 2.0",
+        h1("Carbon Online Estimator 2.0"),
+        br(),
+        p("The second generation of the Carbon Online Estimator Tool (COLE 2.0) 
+          is a web-based calculator that helps users estimate and monitor forest carbon stocks across 
+          large geographic regions of interest (i.e., 75,000 acres and larger). 
+          The tool is designed to provide a simple and accessible way for landowners, foresters, and
+          other stakeholders to assess the carbon impact of different management 
+          strategies and make informed decisions about forest management."),
+        p("In addition to forest carbon estimates, the tool also provides 
+          estimates of tree density, forested area, merchantable volume, and tree 
+          biomass. These additional features enable users to better understand 
+          and manage their forest resources, for example, supporting continuous
+          timber market assessments and forest health monitoring."),
+        p("Finally, the second generation of COLE offers users additional flexibility
+          in defining geographic regions of interest. First, the new tool 
+          offers users the ability to upload their own spatial polygons to define 
+          regions of interest. This feature allows users to analyze specific areas
+          in more detail and get a more accurate estimate of their forest carbon stocks. 
+          Furthermore, the tool also provides users with the ability to create 
+          their own spatial regions of interest using point and draw functionality
+          on integrated maps. This feature allows users to draw custom boundaries 
+          around specific areas of interest, such as a large ownership, and generate 
+          estimates of forest carbon stocks based on those boundaries."),
+        h2("Limitations"),
+        p("COLE draws exclusively from data collected on the USFS Forest Inventory 
+        and Analysis (FIA) plot network. The FIA program is considered the nation's
+        forest census, and reports on the status, trends, and health of forests 
+        through annual on-the-ground sampling. So, the accuracy of COLE-generated 
+        estimates are related to the sample size of the underlying data. The more 
+        filters that a user applies, the more important it becomes to choose a 
+        larger geographic region of interest 
+        (multiple counties, states, etc.) over which to apply these filters. 
+        While COLE will not prevent you from generating estimates for a very specific population of interest
+        (e.g. an aboveground carbon stocks for overstocked, privately owned,
+        white oak/red oak/hickory stands in Elk County, PA), the user should be 
+        aware that such a detailed report on a small scale is subject to high-levels
+        of uncertainty due to low sample sizes.")
       ),
+        h2("History"),
+        p("The first-generation of  COLE was originally developed by Paul Van 
+        Deusen (National Council for Air and Stream Improvment) and Linda Heath 
+        (US Forest Service) to aid in voluntary reporting of greenhouse gases as 
+        described in section 1605(b) of the Energy Policy Act of 1992. COLE, and 
+        NE-GTR-343 (also known as, “Methods for calculating forest ecosystem and 
+        harvested carbon with standard estimates for forest types of the United 
+        States”) are based on similar data and conversion factors."),
+        p("Past versions of COLE allowed users to create a growth and yield 
+          prediction of carbon pools according to forest type, ownership class, 
+          and a variety of other variables. While at present, COLE 2.0 does not
+          support projection of carbon stocks into the future, this functionality
+          is intended to be revived in forthcoming iterations of the tool.")
     ),
     tabItem(
       tabName = "tab1", 
@@ -93,6 +136,8 @@ ui <- dashboardPage(
           sidebar_panel(
             width = 2,
 
+            prompter::use_prompt(),
+            
             
             br(),
             h3("Select region of interest using one of:"),
@@ -140,7 +185,16 @@ ui <- dashboardPage(
                              selectInput("national_forests", "Select National Forests:",       
                                          choices = national_forests$Forest, multiple = TRUE)
             ),
-            
+            # User drawn shapes
+            conditionalPanel(condition = "input.spatial_domain == 'draw_polygons'",
+                             br(),
+                             h4('Use interactive map tools to draw your polygons (see top right corner of map).')
+            ),
+            # User drawn shapes
+            conditionalPanel(condition = "input.spatial_domain == 'draw_circles'",
+                             br(),
+                             h4('Use interactive map tools to draw your circles (see top right corner of map).')
+            ),
             # Shapefile upload
             conditionalPanel(condition = "input.spatial_domain == 'shapefile'",
                              br(),
@@ -155,10 +209,21 @@ ui <- dashboardPage(
             h3("Select time period of interest:"),
             hr(),
             
+            
+            
             # Most recent estimates only?
             checkboxInput("most_recent", 
                           "Use only the most recent data from each state?", 
-                          FALSE),
+                          FALSE) %>%
+              prompter::add_prompt(
+                position = "right", 
+                size = 'large',
+                type = NULL,
+                message = "If region of interest spans multiple state boundaries, most recent reporting years in each state will be combined for estimation purposes.",
+                permanent = FALSE,
+                rounded = TRUE, 
+                animate = FALSE
+              ),
             
             ## What time periods are needed?
             setSliderColor(msu_green, sliderId = 1),
@@ -170,7 +235,16 @@ ui <- dashboardPage(
                                                 min = as.Date(min_year, format = "%Y"), 
                                                 max = as.Date(max_year, format = "%Y"),
                                                 timeFormat = "%Y", step = 365),
-                             ),
+                             )  %>%
+              prompter::add_prompt(
+                position = "right", 
+                size = 'large',
+                type = NULL,
+                message = "Availability of reporting years varies by state, and not all years listed may be available for a particular region of interest. Estimation is limited to the reporting years available in the FIA Database.",
+                permanent = FALSE,
+                rounded = TRUE, 
+                animate = FALSE
+              ),
             
             
 
@@ -180,13 +254,31 @@ ui <- dashboardPage(
             
             checkboxInput('merge_spatial_domain',
                           'Merge selected spatial features into single region of interest?',
-                          TRUE),
+                          TRUE) %>%
+              prompter::add_prompt(
+                position = "right", 
+                size = 'large',
+                type = NULL,
+                message = "If yes, boundaries of selected regions will be dissolved and estimation will occur for the aggregated region. That is, only one combined estimate will be returned for all selected regions. Otherwise, seperate estimates will be returned for each selected feature.",
+                permanent = FALSE,
+                rounded = TRUE, 
+                animate = FALSE
+              ),
             br(),
             
             # If running locally, select file location
             checkboxInput("run_local", 
                           "Run computation offline?", 
-                          FALSE),
+                          FALSE) %>%
+              prompter::add_prompt(
+                position = "right", 
+                size = 'large',
+                type = NULL,
+                message = "Should estimation reference a local instance of the FIADB? Not relevant for online estimation.",
+                permanent = FALSE,
+                rounded = TRUE, 
+                animate = FALSE
+              ),
             conditionalPanel(condition = "input.run_local",
                              br(),
                              textInput("fia_dir", 
@@ -216,7 +308,16 @@ ui <- dashboardPage(
           sidebar_panel(
             
             br(),
-            h3("Select forestland definition:"),
+            h3("Select forestland definition:")  %>%
+              prompter::add_prompt(
+                position = "bottom-right", 
+                size = 'large',
+                type = NULL,
+                message = "Forest land must be at least 10-percent stocked by trees of any size, including land that formerly had such tree cover and that will be naturally or artificially regenerated. Forest land includes transition zones, such as areas between heavily forested and nonforested lands that are at least 10-percent stocked with trees and forest areas adjacent to urban and builtup lands. The minimum area for classification of forest land is 1 acre and 120 feet wide measured stem-to-stem from the outer-most edge. Unimproved roads and trails, streams, and clearings in forest areas are classified as forest if less than 120 feet wide. Timber land is a subset of forest land that is producing or is capable of producing crops of industrial wood and not withdrawn from timber utilization by statute or administrative regulation.",
+                permanent = FALSE,
+                rounded = TRUE, 
+                animate = FALSE
+              ),
             hr(),
             # landType argument
             prettyRadioButtons("landType", "",
@@ -226,7 +327,21 @@ ui <- dashboardPage(
             
             
             br(),
-            h4("Select variable of interest:"),
+            h3("Select variable of interest:") %>%
+              prompter::add_prompt(
+              position = "right", 
+              size = 'large',
+              type = NULL,
+              message = "
+              (1) Forest carbon: tonnes C by IPCC forest carbon pools (includes soils & forest litter); 
+              (2) Forest area: acres of forest/ timberland;
+              (3) Tree biomass: short tons dry biomass by tree component;
+              (4) Tree density: trees per acre and tree basal area;
+              (5) Merchantable volume: cubic feet and board feet of merchantable wood",
+              permanent = FALSE,
+              rounded = TRUE, 
+              animate = FALSE
+            ),
             hr(),
             
             ## Select quantity of interest
@@ -243,7 +358,16 @@ ui <- dashboardPage(
             ## By pool or all pools?
             conditionalPanel(condition = "input.dataType == 'carbon'",
                              br(),
-                             h4("Return estimates for each IPCC forest carbon pool?"),
+                             h4("Return estimates for each IPCC forest carbon pool?") %>%
+                               prompter::add_prompt(
+                                 position = "right", 
+                                 size = 'large',
+                                 type = NULL,
+                                 message = "If yes, seperate estimates will be produced for the following forest carbon pools: aboveground live, belowground live, dead wood, forest litter, and soil organic materials. If no, estimates from each pool will be combined into a single estimate of total forest carbon.",
+                                 permanent = FALSE,
+                                 rounded = TRUE, 
+                                 animate = FALSE
+                               ),
                              hr(),
                              prettyRadioButtons("byPool", 
                                                 "", 
@@ -251,11 +375,19 @@ ui <- dashboardPage(
                                                                 "No, combine all pools." = FALSE)),
                                                 selected = FALSE),
             ),
-            
             ## Tree type
             conditionalPanel(condition = "['biomass', 'tpa', 'volume'].includes(input.dataType)",
                              br(),
-                             h4("Select type of trees for estimates:"),
+                             h4("Select type of trees for estimates:")  %>%
+                               prompter::add_prompt(
+                                 position = "right", 
+                                 size = 'large',
+                                 type = NULL,
+                                 message = "All trees includes all stems, live and dead, greater than 1 in. DBH. Live/Dead includes all stems greater than 1 in. DBH which are live or dead (leaning less than 45 degrees), respectively. Growing-stock includes live stems greater than 5 in. DBH which contain at least one 8 ft merchantable log.",
+                                 permanent = FALSE,
+                                 rounded = TRUE, 
+                                 animate = FALSE
+                               ),
                              hr(),
                              prettyRadioButtons("treeType", "",
                                                 choices = c("Live trees only" = "live",
@@ -268,7 +400,16 @@ ui <- dashboardPage(
             
             
             br(),
-            h4("Group estimates by (optional):"),
+            h3("Group estimates by (optional):") %>%
+              prompter::add_prompt(
+                position = "right", 
+                size = 'large',
+                type = NULL,
+                message = "Optionally select sub-populations for estimation. For example, if 'Ownership' is selected, seperate estimates will be returned for each ownership type encounted on the FIA plot network.",
+                permanent = FALSE,
+                rounded = TRUE, 
+                animate = FALSE
+              ),
             hr(),
             # Select grpBy value/array
             selectInput("groupBy", "",
@@ -293,11 +434,22 @@ ui <- dashboardPage(
                                                      "Annual" = "annual", 
                                                      "Simple moving average" = "SMA", 
                                                      "Linear moving average" = "LMA", 
-                                                     "Exponential moving average" = "EMA")),
+                                                     "Exponential moving average" = "EMA"))  %>%
+                               prompter::add_prompt(
+                                 position = "right", 
+                                 size = 'large',
+                                 type = NULL,
+                                 message = "The temporally-indifferent estimator is FIA's unofficial default estimator, effectively reducing the annual inventory into a periodic one. Alternative design-based estimators include the annual estimator (annual panels, or estimates from plots measured in the same year), simple moving average (combines annual panels with equal weight), linear moving average (combine annual panels with weights that decay linearly with time since measurement), and exponential moving average (combine annual panels with weights that decay exponentially with time since measurement).",
+                                 permanent = FALSE,
+                                 rounded = TRUE, 
+                                 animate = FALSE
+                               ),
                              conditionalPanel(condition = "input.method == 'EMA'",
                                               numeric_input("lambda", "Decay parameter (0, 1):",
                                                             0.5, min = 0, max = 1, step = 0.1)
                              ),
+                             h4(),
+                             HTML("<p>See <a href='https://www.fs.usda.gov/nrs/pubs/jrnl/2020/nrs_2020_stanke_001.pdf'>Stanke et al. (2020)</a> for a complete description of these estimators and tradeoffs between precision and temporal specificity.</p>")
                              
                              # br(),
                              # # Area domain equation box
