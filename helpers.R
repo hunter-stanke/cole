@@ -123,7 +123,7 @@ prep_aoi <- function(spatial_domain,
   } else if (spatial_domain == 'draw_polygons') {
 
     aoi <- purrr::map_dfr(.x = drawn_shapes,
-                          .f = pull_polygons) 
+                          .f = pull_polygon_coordinates) 
     
     ## Force merge
     merge_spatial_domain <- TRUE
